@@ -23,6 +23,18 @@ msgstr ""
 msgid "W12Scan Search Engine For Cybersecurity"
 msgstr ""
 
+#: application/frontend/templates/frontend/base.html:87
+msgid "Recent"
+msgstr ""
+
+#: application/frontend/templates/frontend/base.html:91
+msgid "Dashboard"
+msgstr ""
+
+#: application/frontend/templates/frontend/base.html:94
+msgid "About"
+msgstr ""
+
 #: application/frontend/templates/frontend/base.html:98
 #: application/frontend/templates/frontend/faq.html:8
 msgid "Search Syntax"

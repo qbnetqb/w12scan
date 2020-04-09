@@ -23,6 +23,18 @@ msgstr ""
 msgid "W12Scan Search Engine For Cybersecurity"
 msgstr "W12Scan 网络空间搜索引擎"
 
+#: application/frontend/templates/frontend/base.html:87
+msgid "Recent"
+msgstr "数据搜索"
+
+#: application/frontend/templates/frontend/base.html:91
+msgid "Dashboard"
+msgstr "仪表盘"
+
+#: application/frontend/templates/frontend/base.html:94
+msgid "About"
+msgstr "关于"
+
 #: application/frontend/templates/frontend/base.html:98
 #: application/frontend/templates/frontend/faq.html:8
 msgid "Search Syntax"
@@ -376,7 +388,7 @@ msgstr "国家"
 
 #: application/frontend/templates/frontend/recent.html:46
 msgid "builtwith"
-msgstr "组建"
+msgstr "组件"
 
 #: application/frontend/templates/frontend/recent.html:86
 #, python-format

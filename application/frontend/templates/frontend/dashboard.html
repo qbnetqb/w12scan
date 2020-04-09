@@ -132,6 +132,10 @@
                                                     data-target="{{ node.nodename }}"><i class="icon-ban"></i>
                                                 Delete
                                             </button>
+                                        {% else %}
+                                            <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#task-modal"
+                                                    data-whatever="@mdo">{% trans "New Tasks" %}
+                                            </button>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -145,7 +149,7 @@
         </div>
     </div>
     <div class="row">
-        <div class="col-md-3 grid-margin stretch-card">
+        <!-- <div class="col-md-3 grid-margin stretch-card">
             <div class="card">
                 <div class="card-body">
                     <h4 class="card-title">{% trans "Tasks" %}</h4>
@@ -161,8 +165,8 @@
                     </blockquote>
                 </div>
             </div>
-        </div>
-        <div class="col-md-9 grid-margin stretch-card">
+        </div> -->
+        <div class="col-md-12 grid-margin stretch-card">
             <div class="card">
                 <div class="row h-100">
                     <div class="card-body">

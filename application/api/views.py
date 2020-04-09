@@ -12,7 +12,7 @@ from application.api.models import properly
 from application.user.models import UserInfo
 from application.utils.util import format_convert, k2e_search, datetime_string_format
 from config import AUTH_POST_KEY, ELASTICSEARCH_HOSTS
-from pipeline.elastic import Ips, Domains
+from pipeline.elastic import Ips, Domains, Urls
 # Create your views here.
 from pipeline.redis import redis_verify, redis_con
 
@@ -26,6 +26,28 @@ class DemoListView(View):
     def post(self, request: HttpRequest):
         print(request.body)
         return JsonResponse({"post": "test"})
+
+
+@method_decorator(csrf_exempt, name="dispatch")
+class AddUrlActionView(View):
+
+    def post(self, request: HttpRequest):
+        key = request.META.get("HTTP_W12SCAN", None)
+        if key != AUTH_POST_KEY:
+            return JsonResponse({"status": "400", "msg": "Permission verification failed"})
+        data = request.body.decode()
+        response = {}
+        try:
+            url = json.loads(data)
+            dd = Urls(**url)
+            dd.save()
+            response["status"] = 200
+            response["msg"] = "ok"
+        except Exception as e:
+            response["status"] = 400
+            response["msg"] = str(e)
+
+        return JsonResponse(response)
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -211,11 +233,12 @@ class Search(View):
             }
         else:
             _search, keywords = k2e_search(q, page)
-        s = Search2(using=es, index='w12scan', doc_type=doc_type).from_dict(_search)
+        s = Search2(using=es, index='w12scan-'+doc_type).update_from_dict(_search)
         count = s.execute().hits.total
         datas = []
         for hit in s:
-            doc_type = hit.meta.doc_type
+            # doc_type = hit.meta.doc_type
+            doc_type = hit.meta.index.split('-')[1]
             id = hit.meta.id
             d = {}
             _temp = {}
@@ -237,7 +260,7 @@ class Search(View):
             datas.append(_temp)
         res = {
             "code": 200,
-            "count": count,
+            "count": count['value'],
             "datas": datas,
             "page": page
         }

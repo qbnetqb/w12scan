@@ -16,6 +16,10 @@ urlpatterns = [
         view=views.AddDomainActionView.as_view(),
     ),
     url(
+        regex=r'^url$',
+        view=views.AddUrlActionView.as_view(),
+    ),
+    url(
         regex=r'^ip$',
         view=views.AddIpActionView.as_view(),
     ),

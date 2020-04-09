@@ -44,13 +44,38 @@ class Ips(Document):
     published_from = Date()
 
     class Index:
-        name = 'w12scan'
+        name = 'w12scan-ips'
         settings = {
             "number_of_shards": 2,
         }
 
     class Meta:
         doc_type = 'ips'
+
+    def save(self, **kwargs):
+        if not self.published_from:
+            self.published_from = datetime.now()
+        return super().save(**kwargs)
+
+
+class Urls(Document):
+    status_code = Integer()
+    request_headers = Text()
+    body = Text()
+    title = Keyword()
+    method = Keyword()
+    url = Keyword()
+    host = Keyword()
+    published_from = Date()
+
+    class Index:
+        name = 'w12scan-urls'
+        settings = {
+            "number_of_shards": 2,
+        }
+
+    class Meta:
+        doc_type = 'urls'
 
     def save(self, **kwargs):
         if not self.published_from:
@@ -70,7 +95,7 @@ class Domains(Document):
     published_from = Date()
 
     class Index:
-        name = 'w12scan'
+        name = 'w12scan-domains'
         settings = {
             "number_of_shards": 2,
         }
@@ -101,7 +126,7 @@ def es_search_ip(ip, deduplicat=False):
         _q["collapse"] = {
             "field": "target"
         }
-    s = Search(using=es, index='w12scan', doc_type="ips").from_dict(_q)
+    s = Search(using=es, index='w12scan-ips,w12scan-domains').update_from_dict(_q)
     if s.count() > 0:
         if deduplicat:
             return list(s)[0]
@@ -120,7 +145,7 @@ def es_search_ip_by_id(id):
         }
 
     }
-    s = Search(using=es, index='w12scan').from_dict(_q)
+    s = Search(using=es, index='w12scan-ips,w12scan-domains').update_from_dict(_q)
     dd = s.execute().to_dict().get("hits")
     if dd:
         dd = dd.get("hits")
@@ -142,7 +167,7 @@ def es_search_domain_by_url(target):
             }
         }
     }
-    s = Search(using=es, index='w12scan', doc_type='domains').from_dict(payload)
+    s = Search(using=es, index='w12scan-domains').update_from_dict(payload)
     return list(s)
 
 
@@ -161,7 +186,7 @@ def es_search_domain_by_ip(ip, deduplicat=False):
         payload["sort"] = {
             "published_from": {"order": "desc"}
         }
-    s = Search(using=es, index='w12scan', doc_type='domains').from_dict(payload)
+    s = Search(using=es, index='w12scan-domains').update_from_dict(payload)
     res = s.execute()
     union_domains = []
     for hit in res:
@@ -187,7 +212,7 @@ def count_app():
             }
         }
     }
-    s = Search(using=es, index='w12scan', doc_type="domains").from_dict(payload)
+    s = Search(using=es, index='w12scan-domains').update_from_dict(payload)
     res = s.execute().to_dict()
     try:
         r = res["aggregations"]["genres"]["buckets"]
@@ -214,7 +239,7 @@ def count_country():
                    }
                }
                }
-    s = Search(using=es, index='w12scan', doc_type='ips').from_dict(payload)
+    s = Search(using=es, index='w12scan-ips').update_from_dict(payload)
     res = s.execute().to_dict()
     try:
         r = res["aggregations"]["location"]["country"]["buckets"]
@@ -241,7 +266,7 @@ def count_name(size=10):
                    }
                }
                }
-    s = Search(using=es, index='w12scan', doc_type='ips').from_dict(payload)
+    s = Search(using=es, index='w12scan-ips').update_from_dict(payload)
     res = s.execute().to_dict()
     try:
         r = res["aggregations"]["infos"]["name"]["buckets"]
@@ -268,7 +293,7 @@ def count_port(size=10):
                    }
                }
                }
-    s = Search(using=es, index='w12scan', doc_type='ips').from_dict(payload)
+    s = Search(using=es, index='w12scan-ips').update_from_dict(payload)
     res = s.execute().to_dict()
     try:
         r = res["aggregations"]["infos"]["port"]["buckets"]
@@ -278,8 +303,8 @@ def count_port(size=10):
 
 
 def total_data():
-    ips = Search(using=es, index='w12scan', doc_type='ips')
-    domains = Search(using=es, index='w12scan', doc_type='domains')
+    ips = Search(using=es, index='w12scan-ips')
+    domains = Search(using=es, index='w12scan-domains')
     return ips.count(), domains.count()
 
 
@@ -287,15 +312,15 @@ def total_bug():
     payload = {"query": {"exists": {"field": "bugs"}
                          }, "size": 0
                }
-    s = Search(using=es, index='w12scan').from_dict(payload)
+    s = Search(using=es, index='w12scan-ips,w12scan-domains').update_from_dict(payload)
     res = s.execute().to_dict()
-    return res["hits"]["total"]
+    return res["hits"]["total"]['value']
 
 
 def get_bug_count(doc_type, key):
     payload = {'query': {'bool': {'must': [{'exists': {'field': 'bugs.{0}'.format(key)}}]}}, 'from': 0, 'size': 20,
                'sort': {'published_from': {'order': 'desc'}}}
-    s = Search(using=es, index='w12scan', doc_type=doc_type).from_dict(payload)
+    s = Search(using=es, index='w12scan-' + doc_type).update_from_dict(payload)
     res = s.count()
 
     return res
@@ -313,6 +338,7 @@ if __name__ == '__main__':
             continue
         try:
             Ips.init()
+            Urls.init()
             Domains.init()
             break
         except:

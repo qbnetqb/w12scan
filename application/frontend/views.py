@@ -44,10 +44,11 @@ def index(request):
         }
     else:
         _search, keywords = k2e_search(q, page)
-    s = Search(using=es, index='w12scan').from_dict(_search)
+    s = Search(using=es, index='w12scan-ips,w12scan-domains').update_from_dict(_search)
     count = s.execute().hits.total
 
     # 分页逻辑
+    count = count['value']
     max_page = math.ceil(count / 20)
     if page <= 5:
         paginations = range(1, 10)
@@ -75,7 +76,10 @@ def index(request):
 
     datas = []
     for hit in s:
-        doc_type = hit.meta.doc_type
+        index = hit.meta.index.split('-')
+        if len(index) == 1:
+            continue
+        doc_type = index[1]
         id = hit.meta.id
         d = {}
         if doc_type == "ips":
@@ -96,6 +100,8 @@ def index(request):
                 if ip_info:
                     d["location"] = ip_info.location
             d["proper"] = is_proper(d["url"], "domain")
+        else:
+            continue
         d["doc_type"] = doc_type
         d["id"] = id
         d["published_from"] = datetime_string_format(d["published_from"])
@@ -144,7 +150,7 @@ def dashboard(request):
                    }
                }
                }
-    s = Search(using=es, index='w12scan').from_dict(payload)
+    s = Search(using=es, index='w12scan-ips,w12scan-domains').update_from_dict(payload)
     res = s.execute().to_dict()
     try:
         charts = res["aggregations"]["sales"]["buckets"]
@@ -189,8 +195,8 @@ def dashboard(request):
         nodes.append(tem_dict)
 
     # bug[domain]漏洞图表展示
-    dd = es.indices.get_mapping(index='w12scan', doc_type='domains')
-    dd = dd["w12scan"]["mappings"]["domains"]["properties"]
+    dd = es.indices.get_mapping(index='w12scan-domains')
+    dd = dd["w12scan-domains"]["mappings"]["properties"]
     data_bugs = []
     if "bugs" in dd:
         bug_type = dd["bugs"]["properties"].keys()
@@ -221,7 +227,8 @@ def detail(request, id):
     if not data:
         raise Http404
     data = data[0]
-    doc_type = data["_type"]
+    # doc_type = data["_type"]
+    doc_type = data["_index"].split('-')[1]
     data = data["_source"]
     data["published_from"] = datetime_string_format(data["published_from"])
     if doc_type == "ips":
@@ -254,7 +261,7 @@ def detail(request, id):
                 "size": 10000
             }
 
-            s = Search(using=es, index='w12scan', doc_type='ips').from_dict(payload)
+            s = Search(using=es, index='w12scan-ips').update_from_dict(payload)
             res = s.execute()
             for hit in res:
                 cid = hit.meta.id
@@ -299,7 +306,7 @@ def detail(request, id):
         for h in historys:
             h["published_from"] = datetime_string_format(h["published_from"])
 
-        # s = Search(using=es, index='w12scan', doc_type='ips').from_dict(payload)
+        # s = Search(using=es, index='w12scan-ips').update_from_dict(payload)
         ip_data = {}
         if hit:
             ip_data["id"] = hit.meta.id
@@ -324,7 +331,7 @@ def detail(request, id):
                 "from": 0,
                 "size": 10000
             }
-            s = Search(using=es, index='w12scan', doc_type='domains').from_dict(payload)
+            s = Search(using=es, index='w12scan-domains').update_from_dict(payload)
             for hit in s:
                 dd = {}
                 dd.update(hit.to_dict())
@@ -379,7 +386,7 @@ def zc_detail(request, id):
     domains_data = []
     apps = set()
     if temp_list:
-        s = Search(using=es, index='w12scan', doc_type='domains').from_dict(payload)
+        s = Search(using=es, index='w12scan-domains').update_from_dict(payload)
         for hit in s:
             dd = {}
             dd.update(hit.to_dict())
@@ -450,7 +457,7 @@ def zc_detail(request, id):
     statics_services = {}
 
     if temp_list:
-        s = Search(using=es, index='w12scan', doc_type='ips').from_dict(payload)
+        s = Search(using=es, index='w12scan-ips').update_from_dict(payload)
         for hit in s:
             dd = {}
             dd.update(hit.to_dict())

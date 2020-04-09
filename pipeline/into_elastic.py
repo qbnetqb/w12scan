@@ -40,7 +40,7 @@ def save_domains():
 
 if __name__ == '__main__':
     # es = Elasticsearch(ELASTICSEARCH_HOSTS)
-    # s = Search(using=es, index='w12scan', doc_type="ips").query("match", target="148.153.35.146")
+    # s = Search(using=es, index='w12scan-ips").query("match", target="148.153.35.146")
     # print(s.count())
     # for hit in s:
     #     d = hit.to_dict()
